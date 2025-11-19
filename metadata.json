@@ -1,0 +1,5 @@
+{
+  "name": "Trợ lý tài chính cá nhân",
+  "description": "Một ứng dụng web sử dụng AI của Gemini để hướng dẫn người dùng thiết lập thông tin thu nhập và mục tiêu tài chính cá nhân thông qua một giao diện chat thân thiện.",
+  "requestFramePermissions": []
+}
