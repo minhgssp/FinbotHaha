@@ -1,4 +1,5 @@
 
+
 import { useState, useCallback, useEffect } from 'react';
 import { Message, Sender, Asset, Liability, PendingAssetAction, AssetDebtGeminiResponse, AssetActionType, AssetType, LiabilityType } from '../../../../types.ts';
 import { getAssetDebtResponse } from '../services/assetDebtAIAgent.ts';
@@ -26,14 +27,19 @@ export const useAssetChat = (props: UseAssetChatProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [pendingItem, setPendingItem] = useState<PendingAssetAction | null>(null);
 
-     useEffect(() => {
-        if(messages.length === 0) {
-            const initialText = apiKey 
-                ? "Chào bạn! Hãy cho tôi biết về tài sản hoặc khoản nợ bạn muốn ghi lại."
-                : "Vui lòng cung cấp API Key trong phần Cài đặt để sử dụng tính năng này.";
-            setMessages([{ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: initialText }]);
+    useEffect(() => {
+        // Always display a generic welcome message on initialization.
+        // The API key check is deferred until the user sends a message.
+        if (messages.length === 0) {
+            const initialMessage: Message = {
+                id: `assistant-${Date.now()}`,
+                sender: Sender.ASSISTANT,
+                type: 'text',
+                text: "Chào bạn! Hãy cho tôi biết về tài sản hoặc khoản nợ bạn muốn ghi lại.",
+            };
+            setMessages([initialMessage]);
         }
-    }, [apiKey, messages.length]);
+    }, [messages.length]);
 
     const addNewMessage = useCallback((newMessage: Message) => {
         setMessages(prev => [...prev, newMessage].slice(-MAX_MESSAGES));
@@ -41,7 +47,7 @@ export const useAssetChat = (props: UseAssetChatProps) => {
 
     const processAiResponse = useCallback(async (messageHistory: Message[]) => {
         if (!apiKey) {
-            addNewMessage({ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cấu hình trong Cài đặt." });
+            addNewMessage({ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cung cấp một key hợp lệ trong phần Cài đặt." });
             return;
         }
 

@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
 import { Message, Sender, TodoItem, IncomeSource, FinancialGoal, GeminiResponse } from '../../../../types.ts';
 import { getOnboardingResponse } from '../services/onboardingAIAgent.ts';
@@ -22,7 +23,7 @@ const useOnboarding = ({ onProfileUpdate, todos, setTodos, apiKey }: UseOnboardi
 
     const processAiResponse = useCallback(async (messageHistory: Message[]) => {
         if (!apiKey) {
-            const errorMsg: Message = { id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cấu hình trong Cài đặt." };
+            const errorMsg: Message = { id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cung cấp một key hợp lệ trong phần Cài đặt." };
             setMessages(prev => [...prev, errorMsg]);
             return;
         }
@@ -76,19 +77,19 @@ const useOnboarding = ({ onProfileUpdate, todos, setTodos, apiKey }: UseOnboardi
     }, [currentIncomes, currentGoal, onProfileUpdate, setTodos, todos, apiKey]);
 
     useEffect(() => {
-        // Initial greeting from AI when the component mounts and there are no messages
+        // Set a generic welcome message when the component mounts and there are no messages.
+        // The AI interaction will be triggered by the user's first message.
         if (messages.length === 0) {
-            setIsLoading(true); // Show loading indicator while waiting for key
-            if (apiKey) {
-                 processAiResponse([]);
-            } else if (apiKey === null) { // Explicitly check for null (key has been determined to be absent)
-                const errorMsg: Message = { id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Chào mừng! Vui lòng cung cấp API Key trong phần Cài đặt để bắt đầu." };
-                setMessages([errorMsg]);
-                setIsLoading(false);
-            }
+            const initialMessage: Message = {
+                id: `assistant-${Date.now()}`,
+                sender: Sender.ASSISTANT,
+                type: 'text',
+                text: "Chào mừng! Hãy bắt đầu bằng cách nói 'Xin chào' hoặc cho tôi biết về thu nhập của bạn để tôi có thể giúp bạn thiết lập hồ sơ tài chính.",
+                choices: ["Xin chào", "Lương của tôi là 25 triệu", "Tôi muốn đặt mục tiêu tiết kiệm"]
+            };
+            setMessages([initialMessage]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiKey]); // Rerun effect when API key becomes available
+    }, [messages.length]);
 
     const handleSendMessage = (text: string) => {
         const newUserMessage: Message = {

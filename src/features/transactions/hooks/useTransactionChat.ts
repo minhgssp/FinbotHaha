@@ -21,13 +21,18 @@ export const useTransactionChat = ({ onAddTransaction, onAddRecurringTransaction
     const [isLoading, setIsLoading] = useState(false);
     
     useEffect(() => {
-        if(messages.length === 0) {
-            const initialText = apiKey 
-                ? "Chào bạn! Vui lòng cho tôi biết giao dịch bạn muốn ghi lại."
-                : "Vui lòng cung cấp API Key trong phần Cài đặt để sử dụng tính năng này.";
-            setMessages([{ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: initialText }]);
+        // Always display a generic welcome message on initialization.
+        // The API key check is deferred until the user sends a message.
+        if (messages.length === 0) {
+            const initialMessage: Message = {
+                id: `assistant-${Date.now()}`,
+                sender: Sender.ASSISTANT,
+                type: 'text',
+                text: "Chào bạn! Vui lòng cho tôi biết giao dịch bạn muốn ghi lại.",
+            };
+            setMessages([initialMessage]);
         }
-    }, [apiKey, messages.length]);
+    }, [messages.length]);
 
 
     const addNewMessage = useCallback((newMessage: Message) => {
@@ -36,7 +41,7 @@ export const useTransactionChat = ({ onAddTransaction, onAddRecurringTransaction
 
     const processAiResponse = useCallback(async (messageHistory: Message[]) => {
         if (!apiKey) {
-            addNewMessage({ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cấu hình trong Cài đặt." });
+            addNewMessage({ id: `assistant-${Date.now()}`, sender: Sender.ASSISTANT, type: 'text', text: "Lỗi: Không tìm thấy API key. Vui lòng cung cấp một key hợp lệ trong phần Cài đặt." });
             return;
         }
 
