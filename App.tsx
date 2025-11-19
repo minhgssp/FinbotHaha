@@ -31,6 +31,7 @@ function App() {
   const [userApiKey, setUserApiKey] = useState<string | null>(() => localStorage.getItem(USER_API_KEY));
   const [defaultApiKey, setDefaultApiKey] = useState<string | null>(null);
   const [isKeyLoading, setIsKeyLoading] = useState(true);
+  const [keyError, setKeyError] = useState<string | null>(null);
 
   // Load auth state from localStorage on initial render
   useEffect(() => {
@@ -53,21 +54,32 @@ function App() {
     const fetchDefaultKey = async () => {
       console.log(`[Debug] Attempting to fetch default API key for authState: '${authState}'...`);
       setIsKeyLoading(true);
+      setKeyError(null);
       try {
         const response = await fetch(`/api/keys?mode=${authState}`);
         console.log(`[Debug] API response received with status: ${response.status}`);
         
         if (response.ok) {
           const { apiKey } = await response.json();
-          console.log(`[Debug] Successfully fetched default API key.`);
-          setDefaultApiKey(apiKey);
+          console.log(`[Debug] API key payload received. Key length: ${apiKey?.length || 0}`);
+          
+          if (apiKey && typeof apiKey === 'string' && apiKey.trim() !== '') {
+            console.log(`[Debug] Successfully validated and set default API key.`);
+            setDefaultApiKey(apiKey);
+          } else {
+            console.error(`[Debug] Fetched API key is missing or empty. This usually means the environment variable is not set correctly on Vercel.`);
+            setKeyError('Server đã phản hồi nhưng không cung cấp API key hợp lệ. Vui lòng kiểm tra cấu hình biến môi trường trên Vercel và redeploy lại.');
+            setDefaultApiKey(null);
+          }
         } else {
           const errorText = await response.text();
           console.error(`[Debug] Failed to fetch default API key. Status: ${response.status}. Response: ${errorText}`);
+          setKeyError(`Không thể lấy API key mặc định từ server (Lỗi ${response.status}).`);
           setDefaultApiKey(null);
         }
       } catch (error) {
         console.error('[Debug] Network or other error fetching default API key:', error);
+        setKeyError('Lỗi mạng khi cố gắng lấy API key. Vui lòng kiểm tra kết nối.');
         setDefaultApiKey(null);
       } finally {
         setIsKeyLoading(false);
@@ -79,6 +91,8 @@ function App() {
   }, [authState]);
   
   const currentApiKey = useMemo(() => userApiKey || defaultApiKey, [userApiKey, defaultApiKey]);
+  console.log(`[Debug] Current effective API Key updated. UserKey: ${!!userApiKey}, DefaultKey: ${!!defaultApiKey}, Effective: ${!!currentApiKey}`);
+
 
   const {
     appData,
