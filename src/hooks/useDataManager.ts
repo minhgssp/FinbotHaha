@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthState } from '../../App.tsx';
 import { IncomeSource, FinancialGoal, Transaction, RecurringTransaction, TodoItem, Asset, Liability, AssetType } from '../../types.ts';
@@ -34,7 +33,7 @@ const useDataManager = (authState: AuthState) => {
     const [error, setError] = useState<string | null>(null);
     const debounceTimer = useRef<number | null>(null);
 
-    const saveData = useCallback((data: AppData) => {
+    const saveData = useCallback(async (data: AppData) => {
         if (authState === 'pending') return;
 
         if (authState === 'guest') {
@@ -45,26 +44,30 @@ const useDataManager = (authState: AuthState) => {
                 setError("Không thể lưu dữ liệu cục bộ.");
             }
         } else if (authState === 'premium') {
-            // Enhanced logging for diagnostics
             console.log('[DataManager] Premium user: Attempting to save data to server. Payload:', data);
-            fetch('/api/data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            })
-            .then(async response => { // Made async to read body
-                const responseBody = await response.json().catch(() => ({})); // Gracefully handle non-JSON responses
-                console.log(`[DataManager] Server responded to save request with status: ${response.status}. Body:`, responseBody);
+            try {
+                const response = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
                 if (!response.ok) {
-                    setError(`Lưu dữ liệu lên máy chủ thất bại. Status: ${response.status}`);
+                    const errorBody = await response.json().catch(() => ({ error: 'Unknown server error' }));
+                    throw new Error(`Server responded with ${response.status}: ${errorBody.error}`);
                 }
-            })
-            .catch(err => {
-                console.error("[DataManager] Network error while saving to server:", err);
-                setError("Không thể đồng bộ dữ liệu với máy chủ do lỗi mạng.");
-            });
+                
+                const responseBody = await response.json();
+                console.log(`[DataManager] Server successfully saved data. Status: ${response.status}. Body:`, responseBody);
+                // Optionally clear error on success
+                if (error) setError(null);
+
+            } catch (err) {
+                console.error("[DataManager] CRITICAL: Failed to save data to server:", err);
+                setError("Không thể đồng bộ dữ liệu với máy chủ. Vui lòng kiểm tra kết nối mạng hoặc liên hệ hỗ trợ.");
+            }
         }
-    }, [authState]);
+    }, [authState, error]);
     
     const debouncedSave = useCallback((data: AppData) => {
         if (debounceTimer.current) {
