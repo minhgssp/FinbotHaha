@@ -1,15 +1,14 @@
-
 import { createClient } from '@vercel/kv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Đọc biến môi trường do Vercel cung cấp (với tiền tố đã cấu hình là 'TASKMANAGER')
-const API_URL = process.env.TASKMANAGER_KV_REST_API_URL;
-const API_TOKEN = process.env.TASKMANAGER_KV_REST_API_TOKEN;
+// Đọc biến môi trường cho Vercel KV với tiền tố tùy chỉnh FINBOT_
+const API_URL = process.env.FINBOT_KV_REST_API_URL;
+const API_TOKEN = process.env.FINBOT_KV_REST_API_TOKEN;
 const DATA_KEY = 'financial_app_data_v1';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!API_URL || !API_TOKEN) {
-    return res.status(500).json({ error: 'Server configuration error: KV store not configured.' });
+    return res.status(500).json({ error: 'Server configuration error: KV store not configured. Please set FINBOT_KV_REST_API_URL and FINBOT_KV_REST_API_TOKEN environment variables.' });
   }
 
   const kv = createClient({ url: API_URL, token: API_TOKEN });
