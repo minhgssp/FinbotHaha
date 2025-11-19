@@ -1,8 +1,10 @@
 
+
 import { GoogleGenAI } from "@google/genai";
 import { TransactionGeminiResponse, Message, Sender } from '../../../../types.ts';
 import { TRANSACTION_SYSTEM_INSTRUCTION } from '../../../../constants.ts';
 import { transactionExtractionSchema } from './schemas.ts';
+import { getLocalDateAsString } from '../../../utils/formatters.ts';
 
 const formatHistory = (history: Message[]): string => {
     // Chỉ lấy text từ tin nhắn, bỏ qua các loại tin nhắn đặc biệt
@@ -19,13 +21,17 @@ export const getTransactionResponse = async (
 
     try {
         const model = "gemini-2.5-flash";
+        const currentDate = getLocalDateAsString();
 
         const prompt = `
+---
+**Bối cảnh:**
+Hôm nay là: ${currentDate}
 ---
 **Lịch sử hội thoại gần đây:**
 ${history.length > 0 ? formatHistory(history) : 'Đây là tin nhắn đầu tiên.'}
 ---
-Dựa vào tin nhắn cuối cùng của người dùng, hãy phân tích và trả về đối tượng JSON theo schema.
+Dựa vào bối cảnh và tin nhắn cuối cùng của người dùng, hãy phân tích và trả về đối tượng JSON theo schema.
 `;
 
         const response = await ai.models.generateContent({

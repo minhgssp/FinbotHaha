@@ -6,6 +6,7 @@ import DateNavigator from './components/DateNavigator.tsx';
 import SummaryCard from './components/SummaryCard.tsx';
 import TransactionItem from './components/TransactionItem.tsx';
 import { Transaction } from '../../../types.ts';
+import { getLocalDateAsString } from '../../utils/formatters.ts';
 
 interface TransactionsScreenProps {
   transactions: Transaction[];
@@ -16,7 +17,7 @@ const TransactionsScreen: React.FC<TransactionsScreenProps> = ({
   transactions, 
   onDeleteTransaction
 }) => {
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState(getLocalDateAsString());
 
   const dailyTransactions = useMemo(() => {
     return transactions.filter(t => t.date.startsWith(currentDate));

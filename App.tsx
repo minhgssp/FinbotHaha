@@ -29,6 +29,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userApiKey, setUserApiKey] = useState<string | null>(() => localStorage.getItem(USER_API_KEY));
   const [defaultApiKey, setDefaultApiKey] = useState<string | null>(null);
+  const [isKeyLoading, setIsKeyLoading] = useState(true);
 
   // Load auth state from localStorage on initial render
   useEffect(() => {
@@ -42,9 +43,13 @@ function App() {
 
   // Fetch default API key when auth state is determined
   useEffect(() => {
-    if (authState === 'pending') return;
+    if (authState === 'pending') {
+      setIsKeyLoading(false);
+      return;
+    }
 
     const fetchDefaultKey = async () => {
+      setIsKeyLoading(true);
       try {
         const response = await fetch(`/api/keys?mode=${authState}`);
         if (response.ok) {
@@ -57,6 +62,8 @@ function App() {
       } catch (error) {
         console.error('Error fetching default API key:', error);
         setDefaultApiKey(null);
+      } finally {
+        setIsKeyLoading(false);
       }
     };
 
@@ -68,7 +75,7 @@ function App() {
   const {
     appData,
     setAppData,
-    isLoading,
+    isLoading: isDataLoading,
     error,
   } = useDataManager(authState);
 
@@ -78,7 +85,7 @@ function App() {
 
   // Due date processing for recurring transactions
   useEffect(() => {
-    if (isLoading || authState === 'pending' || !recurringTransactions) return;
+    if (isDataLoading || authState === 'pending' || !recurringTransactions) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -116,7 +123,7 @@ function App() {
     }
   // We only want this to run when the app loads or data changes, not on every state update.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, authState]);
+  }, [isDataLoading, authState]);
 
 
   // All handler functions now use the central `setAppData` updater
@@ -317,13 +324,12 @@ function App() {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
   
-  // FIX: Removed redundant `authState !== 'pending'` check, as the preceding if-statement already handles this case.
-  if (isLoading) {
+  if (isDataLoading || isKeyLoading) {
       return (
           <div className="h-screen bg-slate-900 text-white flex items-center justify-center">
               <div className="flex flex-col items-center">
                   <div className="w-12 h-12 border-4 border-t-green-500 border-slate-700 rounded-full animate-spin"></div>
-                  <p className="mt-4 text-slate-400">Đang tải dữ liệu của bạn...</p>
+                  <p className="mt-4 text-slate-400">Đang khởi tạo...</p>
               </div>
           </div>
       );

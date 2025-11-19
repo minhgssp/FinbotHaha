@@ -6,8 +6,8 @@ export const formatDateForDisplay = (dateString?: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // The date string from AI is 'YYYY-MM-DD'. Appending T00:00:00 ensures it's parsed in the local timezone.
-    const targetDate = dateString ? new Date(dateString + 'T00:00:00') : today;
+    // The date string from AI is 'YYYY-MM-DD'. Appending T12:00:00 ensures it's parsed correctly in any local timezone.
+    const targetDate = dateString ? new Date(dateString + 'T12:00:00') : today;
     targetDate.setHours(0, 0, 0, 0);
 
     const diffTime = targetDate.getTime() - today.getTime();
@@ -22,4 +22,17 @@ export const formatDateForDisplay = (dateString?: string): string => {
         month: '2-digit', 
         year: 'numeric' 
     }).format(targetDate);
+};
+
+/**
+ * Returns the user's local date as a 'YYYY-MM-DD' string.
+ * This correctly handles the timezone offset, so a user in GMT+7 at 2 AM
+ * will get the correct local day, not the previous day which might still be UTC time.
+ * @param date Optional date object. Defaults to now.
+ * @returns The local date string in YYYY-MM-DD format.
+ */
+export const getLocalDateAsString = (date: Date = new Date()): string => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
 };

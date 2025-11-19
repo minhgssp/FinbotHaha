@@ -1,7 +1,10 @@
 
+
+
 import { useState, useCallback, useEffect } from 'react';
 import { Message, Sender, Transaction, PendingTransaction, TransactionGeminiResponse, RecurringTransaction } from '../../../../types.ts';
 import { getTransactionResponse } from '../services/transactionAIAgent.ts';
+import { getLocalDateAsString } from '../../../utils/formatters.ts';
 
 interface UseTransactionChatProps {
     onAddTransaction: (transaction: Transaction) => void;
@@ -45,26 +48,35 @@ export const useTransactionChat = ({ onAddTransaction, onAddRecurringTransaction
         if (response.extractedTransaction) {
             const isRecurring = response.extractedTransaction.frequency === 'monthly';
             const newTransactionId = `${isRecurring ? 'recur' : 'txn'}-${Date.now()}`;
-            const transactionDate = response.extractedTransaction.date 
-                ? new Date(response.extractedTransaction.date + 'T00:00:00').toISOString()
-                : new Date().toISOString();
+            
+            // Use T12:00:00 to prevent timezone conversion errors.
+            // If AI provides a date, use it. Otherwise, default to the current local date.
+            const datePart = response.extractedTransaction.date || getLocalDateAsString();
+            const transactionDate = new Date(datePart + 'T12:00:00').toISOString();
 
             if (isRecurring) {
-                const { frequency, ...recurringData } = response.extractedTransaction;
-                const startDate = new Date().toISOString().split('T')[0];
+                // FIX: The `RecurringTransaction` type does not have a `date` property.
+                // Destructure `date` and `frequency` from the AI response to create a valid object.
+                // Use `datePart` (the date from the AI or today) as the `startDate` and `nextDueDate`.
+                const { frequency, date, ...recurringData } = response.extractedTransaction;
                 onAddRecurringTransaction({
                     ...recurringData,
                     id: newTransactionId,
                     frequency: 'monthly',
-                    startDate: startDate,
-                    nextDueDate: startDate,
+                    startDate: datePart,
+                    nextDueDate: datePart,
                 });
             } else {
-                onAddTransaction({
-                    ...response.extractedTransaction,
+                // Explicitly create a valid Transaction object to avoid passing extra properties.
+                const newTransaction: Transaction = {
                     id: newTransactionId,
+                    description: response.extractedTransaction.description,
+                    amount: response.extractedTransaction.amount,
+                    type: response.extractedTransaction.type,
+                    category: response.extractedTransaction.category,
                     date: transactionDate,
-                });
+                };
+                onAddTransaction(newTransaction);
             }
 
             newAssistantMessage = {
@@ -72,7 +84,7 @@ export const useTransactionChat = ({ onAddTransaction, onAddRecurringTransaction
                 sender: Sender.ASSISTANT,
                 type: 'transaction_confirmation',
                 text: response.responseText,
-                pendingTransaction: response.extractedTransaction,
+                pendingTransaction: { ...response.extractedTransaction, date: datePart }, // Ensure pending tx shows correct date string
                 relatedTransactionId: newTransactionId,
             };
         } else {
