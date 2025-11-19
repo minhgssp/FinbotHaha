@@ -45,21 +45,23 @@ const useDataManager = (authState: AuthState) => {
                 setError("Không thể lưu dữ liệu cục bộ.");
             }
         } else if (authState === 'premium') {
-            console.log('[DataManager] Premium user: Attempting to save data to server...', data);
+            // Enhanced logging for diagnostics
+            console.log('[DataManager] Premium user: Attempting to save data to server. Payload:', data);
             fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             })
-            .then(response => {
-                console.log(`[DataManager] Server responded to save request with status: ${response.status}`);
+            .then(async response => { // Made async to read body
+                const responseBody = await response.json().catch(() => ({})); // Gracefully handle non-JSON responses
+                console.log(`[DataManager] Server responded to save request with status: ${response.status}. Body:`, responseBody);
                 if (!response.ok) {
-                    setError("Lưu dữ liệu lên máy chủ thất bại.");
+                    setError(`Lưu dữ liệu lên máy chủ thất bại. Status: ${response.status}`);
                 }
             })
             .catch(err => {
-                console.error("[DataManager] Failed to save to server", err);
-                setError("Không thể đồng bộ dữ liệu với máy chủ.");
+                console.error("[DataManager] Network error while saving to server:", err);
+                setError("Không thể đồng bộ dữ liệu với máy chủ do lỗi mạng.");
             });
         }
     }, [authState]);
