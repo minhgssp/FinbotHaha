@@ -24,7 +24,7 @@ const USER_API_KEY = 'financial-app-user-api-key';
 
 function App() {
   const [authState, setAuthState] = useState<AuthState>('pending');
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>('chatbot');
   const [activeAgent, setActiveAgent] = useState<ActiveAgent>('transaction');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userApiKey, setUserApiKey] = useState<string | null>(() => localStorage.getItem(USER_API_KEY));
