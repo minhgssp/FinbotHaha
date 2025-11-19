@@ -45,12 +45,20 @@ const useDataManager = (authState: AuthState) => {
                 setError("Không thể lưu dữ liệu cục bộ.");
             }
         } else if (authState === 'premium') {
+            console.log('[DataManager] Premium user: Attempting to save data to server...', data);
             fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
-            }).catch(err => {
-                console.error("Failed to save to server", err);
+            })
+            .then(response => {
+                console.log(`[DataManager] Server responded to save request with status: ${response.status}`);
+                if (!response.ok) {
+                    setError("Lưu dữ liệu lên máy chủ thất bại.");
+                }
+            })
+            .catch(err => {
+                console.error("[DataManager] Failed to save to server", err);
                 setError("Không thể đồng bộ dữ liệu với máy chủ.");
             });
         }
@@ -82,9 +90,12 @@ const useDataManager = (authState: AuthState) => {
                         dataToLoad = JSON.parse(localData);
                     }
                 } else if (authState === 'premium') {
+                    console.log('[DataManager] Premium user: Attempting to load data from server...');
                     const response = await fetch('/api/data');
+                    console.log(`[DataManager] Server responded to load request with status: ${response.status}`);
                     if (response.ok) {
                         const serverData = await response.json();
+                        console.log('[DataManager] Data received from server:', serverData);
                         if (serverData) {
                            dataToLoad = serverData;
                         }
