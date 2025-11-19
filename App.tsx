@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TodoItem, IncomeSource, FinancialGoal, Transaction, Message, RecurringTransaction, Asset, Liability, AssetType, Sender } from './types.ts';
 import { INITIAL_TODOS } from './constants.ts';
@@ -44,26 +45,33 @@ function App() {
   // Fetch default API key when auth state is determined
   useEffect(() => {
     if (authState === 'pending') {
+      console.log('[Debug] Auth state is pending, skipping API key fetch.');
       setIsKeyLoading(false);
       return;
     }
 
     const fetchDefaultKey = async () => {
+      console.log(`[Debug] Attempting to fetch default API key for authState: '${authState}'...`);
       setIsKeyLoading(true);
       try {
         const response = await fetch(`/api/keys?mode=${authState}`);
+        console.log(`[Debug] API response received with status: ${response.status}`);
+        
         if (response.ok) {
           const { apiKey } = await response.json();
+          console.log(`[Debug] Successfully fetched default API key.`);
           setDefaultApiKey(apiKey);
         } else {
-          console.error('Failed to fetch default API key');
+          const errorText = await response.text();
+          console.error(`[Debug] Failed to fetch default API key. Status: ${response.status}. Response: ${errorText}`);
           setDefaultApiKey(null);
         }
       } catch (error) {
-        console.error('Error fetching default API key:', error);
+        console.error('[Debug] Network or other error fetching default API key:', error);
         setDefaultApiKey(null);
       } finally {
         setIsKeyLoading(false);
+        console.log('[Debug] API key fetch process finished.');
       }
     };
 
